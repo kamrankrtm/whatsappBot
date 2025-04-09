@@ -60,8 +60,9 @@ COPY --chown=node:node package*.json ./
 # Switch to non-root user
 USER node
 
-# Force npm install cache bust
-RUN echo "Cache busting npm install $(date)"
+# Force npm install cache bust and clean install
+RUN echo "Cache busting npm install $(date)" && \
+    rm -rf node_modules package-lock.json
 # Install dependencies as non-root user (Puppeteer core will download Chromium here)
 RUN npm install --production
 
