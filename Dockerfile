@@ -40,6 +40,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     lsb-release \
     wget \
     xdg-utils \
+    unzip \
     # Removed gnupg and google-chrome-stable installation steps
     && rm -rf /var/lib/apt/lists/*
 
@@ -49,6 +50,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 # Ensure node user owns the workdir
 RUN chown -R node:node /app
+
+# Create target directory for Chromium
+RUN mkdir -p /app/node_modules/puppeteer-core/.local-chromium/linux-1045629/chrome-linux
+
+# Manually download and extract specific Chromium revision
+ENV CHROMIUM_REVISION=1045629
+RUN wget --no-verbose https://storage.googleapis.com/chromium-browser-snapshots/Linux_x64/${CHROMIUM_REVISION}/chrome-linux.zip -O /tmp/chrome-linux.zip \
+    && unzip /tmp/chrome-linux.zip -d /app/node_modules/puppeteer-core/.local-chromium/linux-${CHROMIUM_REVISION}/ \
+    && chmod +x /app/node_modules/puppeteer-core/.local-chromium/linux-${CHROMIUM_REVISION}/chrome-linux/chrome \
+    && rm /tmp/chrome-linux.zip \
+    # Set ownership for downloaded files as well
+    && chown -R node:node /app/node_modules
 
 # Create and set permissions for .wwebjs_auth directory
 # Make sure the node user can access it
@@ -60,10 +73,8 @@ COPY --chown=node:node package*.json ./
 # Switch to non-root user
 USER node
 
-# Force npm install cache bust and clean install
-RUN echo "Cache busting npm install $(date)" && \
-    rm -rf node_modules package-lock.json
-# Install dependencies as non-root user (Puppeteer core will download Chromium here)
+# Install dependencies (Chromium should already be there)
+# No need for cache bust here as Chromium download is separate
 RUN npm install --production
 
 # Copy app source as non-root user
