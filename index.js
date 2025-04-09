@@ -2,12 +2,35 @@ const express = require('express');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const path = require('path');
+const os = require('os');
+const fs = require('fs');
+const WebSocket = require('ws');
 
 const app = express();
 app.use(express.json());
+app.use(express.static('public'));
 
-// تعیین مسیر برای ذخیره اطلاعات احراز هویت
-const authPath = path.join(process.cwd(), 'auth');
+// Create auth directory in /tmp (which is writable in most environments)
+const authPath = path.join(os.tmpdir(), '.wwebjs_auth');
+try {
+    if (!fs.existsSync(authPath)) {
+        fs.mkdirSync(authPath, { recursive: true });
+    }
+    const sessionPath = path.join(authPath, 'session');
+    if (!fs.existsSync(sessionPath)) {
+        fs.mkdirSync(sessionPath, { recursive: true });
+    }
+    // Ensure the directory has the right permissions
+    fs.chmodSync(authPath, '777');
+    fs.chmodSync(sessionPath, '777');
+
+    console.log('Authentication directories created successfully at:', authPath);
+} catch (err) {
+    console.error('Error creating authentication directories:', err);
+}
+
+// ایجاد سرور WebSocket
+const wss = new WebSocket.Server({ port: 8080 });
 
 const client = new Client({
     authStrategy: new LocalAuth({
@@ -15,17 +38,39 @@ const client = new Client({
     }),
     puppeteer: {
         headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        executablePath: '/usr/bin/chromium',
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--single-process',
+            '--disable-gpu'
+        ]
     }
 });
 
 client.on('qr', (qr) => {
     qrcode.generate(qr, { small: true });
     console.log('QR Code received, scan it with your WhatsApp mobile app.');
+    
+    // ارسال کد QR به همه کلاینت‌های متصل
+    wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(qr);
+        }
+    });
 });
 
 client.on('ready', () => {
     console.log('Client is ready!');
+    wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send('Client is ready!');
+        }
+    });
 });
 
 client.on('message', message => {
@@ -55,7 +100,12 @@ app.post('/send-message', async (req, res) => {
     }
 });
 
-client.initialize();
+// Initialize the client after creating directories
+try {
+    client.initialize();
+} catch (error) {
+    console.error('Error initializing client:', error);
+}
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
