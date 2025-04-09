@@ -1,7 +1,9 @@
 FROM registry2.iran.liara.ir/platforms/node-platform:release-2024-12-11T12-54-node14
 
 # Install Chrome dependencies and verify installation
-RUN apt-get update && apt-get install -y \
+# Add a cache buster echo statement
+RUN echo "Cache Buster $(date)" && \
+    apt-get update && apt-get install -y \
     wget \
     gnupg \
     && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
