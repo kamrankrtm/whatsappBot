@@ -1,0 +1,5 @@
+{
+  "platform": "node",
+  "app": "whatsapp",
+  "port": 3000
+} 

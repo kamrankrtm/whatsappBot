@@ -1,12 +1,18 @@
 const express = require('express');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
+const path = require('path');
 
 const app = express();
 app.use(express.json());
 
+// تعیین مسیر برای ذخیره اطلاعات احراز هویت
+const authPath = path.join(process.cwd(), 'auth');
+
 const client = new Client({
-    authStrategy: new LocalAuth(),
+    authStrategy: new LocalAuth({
+        dataPath: authPath
+    }),
     puppeteer: {
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox']
