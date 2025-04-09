@@ -1,23 +1,50 @@
 FROM registry2.iran.liara.ir/platforms/node-platform:release-2024-12-11T12-54-node14
 
-# Install Chrome dependencies and verify installation
-# Add a cache buster echo statement
-RUN echo "Cache Buster $(date)" && \
-    apt-get update && apt-get install -y \
-    wget \
-    gnupg \
-    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list \
-    && apt-get update \
-    && apt-get install -y google-chrome-stable --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/* \
-    # Verify installation
-    && google-chrome-stable --version \
-    && ls -l /usr/bin/google-chrome-stable
+# Force subsequent layers to rebuild (Keep this for now, might not be needed later)
+RUN echo "Forcing layer rebuild $(date)"
 
-# Set environment variables
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+# Install common system dependencies for Chrome/Puppeteer (Chromium will be downloaded by Puppeteer)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    fonts-liberation \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libc6 \
+    libcairo2 \
+    libcups2 \
+    libdbus-1-3 \
+    libexpat1 \
+    libfontconfig1 \
+    libgbm1 \
+    libgcc1 \
+    libglib2.0-0 \
+    libgtk-3-0 \
+    libnspr4 \
+    libnss3 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libstdc++6 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcomposite1 \
+    libxcursor1 \
+    libxdamage1 \
+    libxext6 \
+    libxfixes3 \
+    libxi6 \
+    libxrandr2 \
+    libxrender1 \
+    libxss1 \
+    libxtst6 \
+    lsb-release \
+    wget \
+    xdg-utils \
+    # Removed gnupg and google-chrome-stable installation steps
+    && rm -rf /var/lib/apt/lists/*
+
+# Removed PUPPETEER_SKIP_CHROMIUM_DOWNLOAD and PUPPETEER_EXECUTABLE_PATH ENV variables
 
 # Create app directory
 WORKDIR /app
@@ -32,7 +59,7 @@ COPY --chown=node:node package*.json ./
 # Switch to non-root user
 USER node
 
-# Install dependencies as non-root user
+# Install dependencies as non-root user (Puppeteer will download Chromium here)
 RUN npm install --production
 
 # Copy app source as non-root user
