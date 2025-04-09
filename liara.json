@@ -1,28 +1,9 @@
 {
-  "platform": "node",
-  "app": "whatsapp",
-  "port": 3000,
-  "node": {
-    "version": "14"
-  },
+  "app": "whatsappbot",
   "disks": [
     {
       "name": "data",
-      "mountTo": "/app/.wwebjs_auth"
+      "mountTo": "/tmp/.wwebjs_auth"
     }
-  ],
-  "environments": {
-    "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true",
-    "PUPPETEER_EXECUTABLE_PATH": "/usr/bin/chromium"
-  },
-  "build": {
-    "apt": {
-      "packages": [
-        "chromium",
-        "chromium-driver",
-        "libgbm1",
-        "libasound2"
-      ]
-    }
-  }
+  ]
 } 
