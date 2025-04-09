@@ -1,7 +1,6 @@
 FROM registry2.iran.liara.ir/platforms/node-platform:release-2024-12-11T12-54-node14
 
-# Force subsequent layers to rebuild (Keep this for now, might not be needed later)
-RUN echo "Forcing layer rebuild $(date)"
+# Removed the initial cache buster
 
 # Install common system dependencies for Chrome/Puppeteer (Chromium will be downloaded by Puppeteer)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -48,6 +47,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Create app directory
 WORKDIR /app
+# Ensure node user owns the workdir
+RUN chown -R node:node /app
 
 # Create and set permissions for .wwebjs_auth directory
 # Make sure the node user can access it
@@ -59,7 +60,9 @@ COPY --chown=node:node package*.json ./
 # Switch to non-root user
 USER node
 
-# Install dependencies as non-root user (Puppeteer will download Chromium here)
+# Force npm install cache bust
+RUN echo "Cache busting npm install $(date)"
+# Install dependencies as non-root user (Puppeteer core will download Chromium here)
 RUN npm install --production
 
 # Copy app source as non-root user
