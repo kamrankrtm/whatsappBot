@@ -38,6 +38,7 @@ const client = new Client({
     }),
     puppeteer: {
         headless: true,
+        executablePath: './node_modules/puppeteer-core/.local-chromium/linux-1045629/chrome-linux/chrome',
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
