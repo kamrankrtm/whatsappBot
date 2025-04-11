@@ -1,11 +1,31 @@
 {
+  "name": "whatsapp-bot",
   "platform": "node",
-  "app": "whatsappbot-5bcb9egrkp",
+  "app": "whatsappbot",
   "port": 3000,
   "disks": [
     {
       "name": "data",
-      "mountTo": "/tmp/.wwebjs_auth"
+      "mountTo": "/app/data"
+    },
+    {
+      "name": "storage-data",
+      "mountTo": "/app/storage"
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "DB_TYPE": "mysql",
+    "DB_HOST": "incorrect-host",
+    "DB_PORT": "3306",
+    "DB_NAME": "incorrect-db",
+    "DB_USER": "",
+    "DB_PASSWORD": "",
+    "USE_REMOTE_CHROME": "true",
+    "CHROME_WS_ENDPOINT": "${CHROME_WS_ENDPOINT}",
+    "CHROME_TOKEN": "${CHROME_TOKEN}"
+  },
+  "build": {
+    "command": "npm install && npm install mysql2 && node migrate.js"
+  }
 } 
